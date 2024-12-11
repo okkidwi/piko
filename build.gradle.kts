@@ -110,8 +110,8 @@ publishing {
                     }
                 }
                 scm {
-                    connection = "scm:git:git://github.com/okkidwi/piko.git"
-                    developerConnection = "scm:git:git@github.com:okkidwi/piko.git"
+                    connection = "scm:git:https://github.com/okkidwi/piko.git"
+                    developerConnection = "scm:git:https://github.com/okkidwi/piko.git"
                     url = "https://github.com/okkidwi/piko"
                 }
             }
