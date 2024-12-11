@@ -110,9 +110,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = "scm:git:git://github.com/crimera/piko.git"
-                    developerConnection = "scm:git:git@github.com:crimera/piko.git"
-                    url = "https://github.com/crimera/piko"
+                    connection = "scm:git:git://github.com/okkidwi/piko.git"
+                    developerConnection = "scm:git:git@github.com:okkidwi/piko.git"
+                    url = "https://github.com/okkidwi/piko"
                 }
             }
         }
