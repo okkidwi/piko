@@ -12,48 +12,51 @@ on:
       - dev
 
 jobs:
-  release:
-    name: Release
+  gradle:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Make sure the release step uses its own credentials:
-          # https://github.com/cycjimmy/semantic-release-action#private-packages
           persist-credentials: false
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Cache Gradle
         uses: burrunan/gradle-cache-action@v1
 
       - name: Build with Gradle
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew generatePatchesFiles clean
+        run: ./gradlew generatePatchesFiles clean --parallel
 
-      # - name: Upload patches jar
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: patches
-      #     path: build/libs/*.jar
-
+  node:
+    runs-on: ubuntu-latest
+    steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
           cache: 'npm'
 
+      - name: Cache Node Modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: npm install
 
       - name: Release
         env:
-          GITHUB_TOKEN: ${{ secrets.REPOSITORY_PUSH_ACCESS }}
+          GH_TOKEN: ${{ secrets.REPOSITORY_PUSH_ACCESS }}
         run: npm exec semantic-release
 
-      - name: Run apk build
-        run: |          
+  trigger-apk-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger APK Build
+        run: |
           curl -X POST https://api.github.com/repos/crimera/piko-builds/dispatches \
           -H 'Accept: application/vnd.github+json' \
           -H "Authorization: Bearer ${{secrets.ACCESS_TOKEN}}" \
