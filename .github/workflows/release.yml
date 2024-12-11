@@ -48,7 +48,7 @@ jobs:
 
       - name: Release Using Semantic-Release
         env:
-          GITHUB_TOKEN: ${{ secrets.REPOSITORY_PUSH_ACCESS }}
+          GH_TOKEN: ${{ secrets.REPOSITORY_PUSH_ACCESS }}
         run: npm exec semantic-release
 
       - name: Cache Gradle Files
