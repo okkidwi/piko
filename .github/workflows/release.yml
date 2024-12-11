@@ -12,29 +12,28 @@ on:
       - dev
 
 jobs:
-  gradle:
+  release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Source Code
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           fetch-depth: 1
 
-      - name: Cache Gradle
-        uses: burrunan/gradle-cache-action@v1
+      - name: Validate Dependencies Lock File
+        run: |
+          if [ ! -f package-lock.json ] && [ ! -f yarn.lock ]; then
+            echo "Error: Dependencies lock file is not found in the repository root."
+            exit 1
+          fi
 
-      - name: Build with Gradle
-        run: ./gradlew generatePatchesFiles clean --parallel
-
-  node:
-    runs-on: ubuntu-latest
-    steps:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
           cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
 
       - name: Cache Node Modules
         uses: actions/cache@v3
@@ -44,20 +43,28 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm install
 
-      - name: Release
+      - name: Release Using Semantic-Release
         env:
-          GH_TOKEN: ${{ secrets.REPOSITORY_PUSH_ACCESS }}
+          GITHUB_TOKEN: ${{ secrets.REPOSITORY_PUSH_ACCESS }}
         run: npm exec semantic-release
 
-  trigger-apk-build:
-    runs-on: ubuntu-latest
-    steps:
+      - name: Cache Gradle Files
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build with Gradle
+        run: ./gradlew generatePatchesFiles clean --parallel
+
       - name: Trigger APK Build
         run: |
           curl -X POST https://api.github.com/repos/crimera/piko-builds/dispatches \
           -H 'Accept: application/vnd.github+json' \
-          -H "Authorization: Bearer ${{secrets.ACCESS_TOKEN}}" \
+          -H "Authorization: Bearer ${{ secrets.ACCESS_TOKEN }}" \
           -d '{"event_type": "build"}'
